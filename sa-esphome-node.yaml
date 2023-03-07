@@ -1,0 +1,141 @@
+esphome:
+  name: SA-ESPHome-Node
+
+esp8266:
+  board: d1_mini
+  
+web_server:
+  port: 80
+  version: 1
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "%Your_Key_Goes_Here%"
+
+ota:
+  password: "0301"
+
+time:
+  - platform: homeassistant
+    id: esptime
+
+wifi:
+  fast_connect: true
+  networks:
+  - ssid: ""
+    password: 
+    hidden: true
+    manual_ip:
+      # Set this to the IP of the ESP
+      static_ip: x.x.x.x
+      # Set this to the IP address of the router. Often ends with .1
+      gateway: x.x.x.1
+    # The subnet of the network. 255.255.255.0 works for most home networks.
+      subnet: 255.255.255.0
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "SA ESPHome Node Fallback Hotspot"
+    password: "KagBwBB25LKS"
+
+captive_portal:
+
+binary_sensor:
+  - platform: gpio
+    pin: D4
+    name: "Motion Sensor"
+    device_class: motion
+
+  - platform: gpio
+    id: button
+    pin:
+      number: D1
+      mode: INPUT_PULLUP
+      inverted: True
+    name: "Button"
+
+sensor:
+  - platform: dht
+    pin: D3
+    model: DHT11
+    update_interval: 60s
+    id: temperature
+    temperature:
+      name: "Temperature"
+      filters:
+        offset: -5.0
+    humidity:
+      name: "Humidity"
+
+font: 
+  - file: 'slkscr.ttf'
+    id: font1
+    size: 16 
+
+  - file: 'BebasNeue-Regular.ttf'
+    id: font2
+    size: 22 
+
+  - file: 'arial.ttf'
+    id: font3
+    size: 12  
+
+  - file: 'BebasNeue-Regular.ttf'
+    id: font4
+    size: 16       
+    
+# display
+i2c:
+  sda: D5
+  scl: D6
+  scan: False
+
+display:
+  - platform: ssd1306_i2c
+    model: "SH1106 128x64"
+    id: office_display
+    address: 0x3C
+    update_interval: 2s
+    pages:
+      - id: page1
+        lambda: |-
+          it.printf(64, 0, id(font2), TextAlign::TOP_CENTER, "ESPHome Sensor");
+          
+          it.strftime(0, 60, id(font2), TextAlign::BASELINE_LEFT, "%H:%M", id(esptime).now());
+          if (id(temperature).has_state()) {
+            it.printf(127, 60, id(font2), TextAlign::BOTTOM_RIGHT , "%.1f°C", id(temperature).state);  }
+
+      - id: page2
+        lambda: |-
+          it.printf(64, 0, id(font2), TextAlign::TOP_CENTER, "Temp");
+          if (id(temperature).has_state()) {
+            it.printf(64, 60, id(font2), TextAlign::BOTTOM_CENTER , "%.1f°C", id(temperature).state);  }
+      
+      - id: page3
+        lambda: |-
+          it.printf(64, 0, id(font2), TextAlign::TOP_CENTER, "Current Time");
+          it.strftime(64, 60, id(font2), TextAlign::BOTTOM_CENTER, "%H:%M", id(esptime).now());
+
+
+interval: 
+  - interval: 10s
+    then:
+    - display.page.show_next: office_display
+    - component.update: office_display
+
+light:
+  - platform: status_led
+    name: "red-led"
+    id: redled
+    pin: D7
+
+
+
+  - platform: status_led
+    name: "green-led"
+    id: greenled
+    pin: D8    

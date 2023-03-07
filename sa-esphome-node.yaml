@@ -17,7 +17,7 @@ api:
     key: "%Your_Key_Goes_Here%"
 
 ota:
-  password: "0301"
+  password: "%OTA_Password%"
 
 time:
   - platform: homeassistant
